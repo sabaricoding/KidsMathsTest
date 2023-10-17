@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      .hidden {
+        display: none;
+      }
+      .question-container {
+        display: flex;
+        justify-content: space between;
+      }
+      .question-list {
+        list-style-type: none;
+      }
+      .question-list li {
+        font-size: 24px; /* Increase the font size */
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Kids Math Test</h1>
+    <div id="question-container">
+      <form action="/submit" method="post">
+        <div class="question-list">
+          <ul id="questions-list-left">
+            <!-- First 15 questions will be dynamically generated here -->
+          </ul>
+        </div>
+        <div class="question-list">
+          <ul id="questions-list-right">
+            <!-- Next 15 questions will be dynamically generated here -->
+          </ul>
+        </div>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+    <div id="result" class="hidden">
+      <h2>Test Completed!</h2>
+      <p id="score"></p>
+      <div id="fireworks" class="hidden">
+        <!-- You can put your crackers or fireworks animation here -->
+        🎆🎆🎆
+      </div>
+    </div>
+
+    <script>
+      const questions = [];
+      const questionCount = 30;
+      let correctAnswers = 0;
+      let timer;
+      const questionContainer = document.getElementById("question-container");
+      const questionForm = document.querySelector("form");
+      const questionsListLeft = document.getElementById("questions-list-left");
+      const questionsListRight = document.getElementById(
+        "questions-list-right"
+      );
+      const submitButton = document.querySelector("form button[type='submit']");
+      const resultContainer = document.getElementById("result");
+      const scoreElement = document.getElementById("score");
+      const fireworksElement = document.getElementById("fireworks");
+
+      function generateQuestion(index) {
+        const operators = ["+", "-", "*"];
+        const operator =
+          operators[Math.floor(Math.random() * operators.length)];
+        const maxNumber = 10;
+
+        let num1 = Math.floor(Math.random() * maxNumber);
+        let num2 = Math.floor(Math.random() * maxNumber);
+
+        if (operator === "-") {
+          num1 = Math.max(num1, num2);
+        }
+
+        const questionText = `${num1} ${operator} ${num2} = ?`;
+        let answer;
+
+        switch (operator) {
+          case "+":
+            answer = num1 + num2;
+            break;
+          case "-":
+            answer = num1 - num2;
+            break;
+          case "*":
+            answer = num1 * num2;
+            break;
+        }
+
+        questions.push({ text: questionText, answer });
+        const listItem = document.createElement("li");
+        listItem.innerHTML = `<label>${questionText} <input type="text" name="answer[]" required data-index="${index}"></label>`;
+
+        if (index < questionCount / 2) {
+          questionsListLeft.appendChild(listItem);
+        } else {
+          questionsListRight.appendChild(listItem);
+        }
+      }
+
+      function startTimer() {
+        let seconds = 600;
+        timer = setInterval(function () {
+          seconds--;
+          if (seconds >= 0) {
+            resultContainer.classList.remove("hidden");
+            resultContainer.textContent = `Time Remaining: ${Math.floor(
+              seconds / 60
+            )} minutes ${seconds % 60} seconds`;
+          } else {
+            clearInterval(timer);
+            showResult();
+          }
+        }, 1000);
+      }
+
+      function showResult() {
+        resultContainer.style.display = "block";
+        for (let i = 0; i < questionCount; i++) {
+          const input = questionForm.querySelector(`input[data-index="${i}"]`);
+          const correctAnswer = questions[i].answer;
+          const userAnswer = parseInt(input.value, 10);
+          if (userAnswer === correctAnswer) {
+            input.style.color = "green";
+          } else {
+            input.style.color = "red";
+          }
+          input.value += ` (Correct Answer: ${correctAnswer})`;
+        }
+        scoreElement.textContent = `You got ${correctAnswers} out of ${questionCount} questions correct!`;
+
+        if (correctAnswers === questionCount) {
+          fireworksElement.style.display = "block";
+        }
+      }
+
+      questionForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const submittedAnswers = Array.from(
+          questionForm.querySelectorAll("input")
+        ).map((input) => {
+          const index = input.getAttribute("data-index");
+          return {
+            answer: parseInt(input.value, 10),
+            correct: questions[index].answer === parseInt(input.value, 10),
+          };
+        });
+
+        correctAnswers = submittedAnswers.filter((answer) => answer.correct)
+          .length;
+        showResult();
+      });
+
+      for (let i = 0; i < questionCount; i++) {
+        generateQuestion(i);
+      }
+
+      startTimer();
+    </script>
+  </body>
+</html>
